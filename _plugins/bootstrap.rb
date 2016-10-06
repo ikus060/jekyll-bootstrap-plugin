@@ -95,15 +95,12 @@ module Jekyll
     end
 
     class BootstrapCarousel < Liquid::Block
-        attr_accessor :slides
 
         def initialize(tag_name, markup, tokens)
             @carouselid = "mycarousel"
             if /(?<carouselid>[^\s]+)/i =~ markup
               @carouselid = carouselid
             end
-            @slides = []
-            @bgcolor = ["", "rgba(102, 102, 102, 0.50)", "rgba(85, 87, 83, 0.50)"]
             super
         end
 
@@ -119,11 +116,14 @@ module Jekyll
           result = "<div id=\"#{@carouselid}\" class=\"carousel slide\" data-ride=\"carousel\">"
           result << "<ol class=\"carousel-indicators\">"
           for counter in 0..count-1
-            result << "<li data-target=\"##{@carouselid}\" data-slide-to=\"#{$counter}\" class=\"#{counter == 0 ? "active" : "" }\"></li>"
+            result << "<li data-target=\"##{@carouselid}\" data-slide-to=\"#{counter}\" class=\"#{counter == 0 ? "active" : "" }\"></li>"
           end
           result << "</ol>"
           result << "<div class=\"carousel-inner\" role=\"listbox\">"
-          result << super
+          # Convert content from Markdown.
+          site = context.registers[:site]
+          converter = site.find_converter_instance(Jekyll::Converters::Markdown)
+          result << converter.convert(super(context))
           result << "</div>
   <a class=\"left carousel-control\" href=\"##{@carouselid}\" role=\"button\" data-slide=\"prev\">
     <span class=\"icon-prev\" aria-hidden=\"true\"></span>
@@ -140,18 +140,17 @@ module Jekyll
 
     class BootstrapCarouselSlide < Liquid::Block
         def initialize(tag_name, markup, tokens)
-            @class = ""
-            @bgcolor = "rgba(51, 51, 51, 0.50)"
             super
         end
 
         def render(context)
           # Check if first slide.
+          $active = ""
           if context.registers[:firstslide]
-            @class = " active"
+            $active = " active"
             context.registers[:firstslide] = false
           end
-          result =  " <div class=\"item #{@class}\" style=\"background-color: #{@bgcolor}\">"
+          result =  " <div class=\"item #{$active}\">"
           result << "<div class=\"carousel-caption\">"
           # Convert content from Markdown.
           site = context.registers[:site]
